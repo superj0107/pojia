@@ -35,11 +35,19 @@ try {
   if ($LASTEXITCODE -ne 0) { WARN "npm link 失败，尝试 npm install -g ."; & $npmCmd install -g . 2>&1 | Out-String | Write-Host }
 } finally { Pop-Location }
 
+# npm link 后当前进程 PATH 可能还是旧的；刷新一次再判断。
+$env:Path = [System.Environment]::GetEnvironmentVariable('Path', 'User') + ';' + [System.Environment]::GetEnvironmentVariable('Path', 'Machine')
 $pojia = Get-Command pojia -ErrorAction SilentlyContinue
-if ($pojia) {
-  OK "pojia 可用：$($pojia.Source)"
-  & pojia doctor 2>&1 | Select-Object -First 12 | Out-String | Write-Host
+$pojiaPath = if ($pojia) { $pojia.Source } else { $null }
+if (-not $pojiaPath) {
+  $npmGlobal = (& $npmCmd root -g 2>$null).Trim()
+  $cand = Join-Path (Split-Path $npmGlobal -Parent) 'pojia.ps1'
+  if (Test-Path $cand) { $pojiaPath = $cand }
+}
+if ($pojiaPath) {
+  OK "pojia 可用：$pojiaPath"
+  & $pojiaPath doctor 2>&1 | Select-Object -First 12 | Out-String | Write-Host
 } else {
-  WARN "pojia 不在 PATH。把 npm 全局 bin 目录加入 PATH 后重开终端，或手动运行：npm link"
+  WARN "pojia 不在 PATH。把 npm 全局 bin 目录加入 PATH 后重开终端，再双击「点我检查是否生效.bat」。"
 }
 OK "完成。下一步双击「点我一键注入.bat」投放到 codex/claude（或先 doctor 看通道）。"

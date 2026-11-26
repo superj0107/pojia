@@ -1,0 +1,43 @@
+{
+  "name": "pojia",
+  "version": "0.1.0",
+  "description": "pojia — 一份人设，多宿主投放。全局多 Agent 行为编排工具，自实现 codex / claude code 注入通道。",
+  "type": "module",
+  "license": "CC-BY-NC-SA-4.0",
+  "bin": {
+    "pojia": "bin/pojia.mjs"
+  },
+  "main": "lib/persona.js",
+  "files": [
+    "bin",
+    "lib",
+    "personas",
+    "test",
+    "README.md",
+    "DISCLAIMER.md",
+    "LICENSE",
+    "NOTICE",
+    "install.ps1",
+    "点我一键安装.bat",
+    "点我一键注入.bat",
+    "点我一键回滚.bat",
+    "点我一键卸载.bat",
+    "点我检查是否生效.bat"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "pojia",
+    "jailbreak",
+    "persona",
+    "codex",
+    "claude-code",
+    "agent",
+    "prompt-injection",
+    "red-team"
+  ]
+}
