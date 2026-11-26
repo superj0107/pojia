@@ -1,0 +1,5 @@
+
+# Release 打包临时目录/产物
+pojia-*-installer/
+*.tgz
+*.zip
