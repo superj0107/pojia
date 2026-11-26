@@ -30,9 +30,9 @@ pojia persona import <id> <正文>       导入人设
 pojia persona delete <id>             删除人设
 
 pojia status                          查看各通道状态
-pojia apply [codex|claude|all]        把当前人设投放到宿主（默认 all）
-pojia revert [codex|claude|all]       撤销投放，恢复原配置
-pojia doctor                          环境自检
+pojia apply [通道|all]       把当前人设投放到宿主（默认 all）
+pojia revert [通道|all]      撤销投放，恢复原配置
+pojia doctor                 环境自检（含 roadmap/excluded）
 
 pojia validate list                   列出有效性探针
 pojia validate record <id> <pass|fail|skip> [备注]
@@ -40,16 +40,27 @@ pojia validate report                 命中率报告
 pojia validate clear
 ```
 
-## 通道说明
+## 通道矩阵（13 个已实现）
 
-| 通道 | 落点 | 生效层 | 备注 |
+| 通道 | 落点 | 生效层 | 状态 |
 |---|---|---|---|
-| codex | `~/.codex/config.toml` 的 `model_instructions_file` → `~/.pojia/injections/codex.md` | system | apply 前备份 config 为 `.pojia-bak`，revert 整体恢复 |
-| claude | `~/.claude/CLAUDE.md` 的 managed block | 用户层 system-reminder | 不是 system 数组；sys 层另生成 `~/.pojia/injections/claude-system.md`，配合 `claude --system-prompt-file` 使用 |
+| codex | `config.toml` 的 `model_instructions_file` | system | 本机实测 |
+| claude | `CLAUDE.md` managed block + sys 文件 | user/sys | 本机实测 |
+| grok | `~/.grok/AGENTS.md` | 用户层，启动读一次 | 未实测（本机无 grok） |
+| hermes | `HERMES_HOME/SOUL.md` | 会话首轮 | 未实测（续会话不生效） |
+| antigravity | 全局 `AGENTS.md` | always_on | agent-purge 实测可用，本机未装 |
+| kilo | XDG kilo `AGENTS.md` | 用户层 | 未实测 |
+| zcode | `~/.zcode/config.toml` 键 | system | 未实测（CLI 可能拿不到） |
+| workbuddy | 插件缓存 `workbuddy-prompt.tpl` | system | 落点存在，需重启 WorkBuddy |
+| qwen / qoder / kimi / kiro / codebuddy | 生成 `pojia-<name>` 启动器 + 启动参数 | system | 用包装器启动才生效 |
 
-通道目录隔离：可用 `CODEX_HOME`、`CLAUDE_CONFIG_DIR` 指向测试目录，不碰真实配置。数据目录用 `POJIA_HOME`（默认 `~/.pojia`）。
+**Roadmap（未实现，因为 sys 层要装插件扩展 hook，工程量大）**：opencode、pi / pi-desktop、omp、crush。
+**明确排除（无 system 入口）**：continue、auggie、goose；qwen/qoder/kiro/kimi 的常驻配置无 sys 入口，只走启动 shim。
+DSH 走姊妹项目 [dsh-pojia](https://github.com/superj0107/dsh-pojia)。
 
-**注意**：如果 codex 已被其他工具（如 agent-purge）接管，`pojia apply codex` 会覆盖 `model_instructions_file`；`revert` 从 `.pojia-bak` 恢复覆盖前的值。请用隔离目录测试后再对真实环境执行。
+通道目录隔离：可用 `CODEX_HOME`、`CLAUDE_CONFIG_DIR`、`GROK_HOME`、`HERMES_HOME`、`ZCODE_HOME`、`XDG_CONFIG_HOME` 指向测试目录，不碰真实配置。数据目录用 `POJIA_HOME`（默认 `~/.pojia`）。
+
+**注意**：`apply all` 会写所有通道（含未实测的），建议先 `pojia status` 看清落点，对真实环境用具体通道名。codex 若被其他工具接管，`revert` 从 `.pojia-bak` 恢复覆盖前的值。
 
 ## 人设格式
 
@@ -77,7 +88,7 @@ order: 50
 npm test
 ```
 
-5 个测试覆盖人设增删改查、codex config 写/恢复、claude managed block 写/清除、验证记录。
+9 个测试覆盖人设增删改查、通道注册表完整性、ruleFile/tomlKey/shim 三类通道 apply/revert、codex/claude 写恢复、验证记录。
 
 ## 许可与署名
 

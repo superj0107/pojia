@@ -1,14 +1,8 @@
 #!/usr/bin/env node
 // pojia — 全局多 Agent 人设与行为编排（自实现通道，不依赖 agent-purge）。
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
 import * as persona from "../lib/persona.js";
 import * as validate from "../lib/validate.js";
-import * as codex from "../lib/channels/codex.js";
-import * as claude from "../lib/channels/claude.js";
-
-const CHANNELS = { codex, claude };
+import { CHANNELS, ROADMAP, EXCLUDED } from "../lib/channels/index.js";
 
 function help() {
   return `pojia — 一份人设，多宿主投放
@@ -68,7 +62,7 @@ function validateCommand(args) {
 
 function channelNames(arg) {
   if (!arg || arg === "all") return Object.keys(CHANNELS);
-  if (!CHANNELS[arg]) throw new Error(`未知通道 ${arg}（可用 codex/claude/all）`);
+  if (!CHANNELS[arg]) throw new Error(`未知通道 ${arg}（可用 ${Object.keys(CHANNELS).join("/")}/all）`);
   return [arg];
 }
 
@@ -86,7 +80,7 @@ function main() {
       case "a": {
         const results = channelNames(args[0]).map((n) => {
           const r = CHANNELS[n].apply();
-          if (r.ok) persona.setApplied(n, { injection: r.injectionPath || r.claudeMd || "" });
+          if (r.ok) persona.setApplied(n, { injection: r.injectionPath || r.claudeMd || r.script || r.filePath || (r.files || []).join(",") || "" });
           return r;
         });
         return out(results);
@@ -106,6 +100,8 @@ function main() {
           personaCount: persona.listPersonas().length,
           current: persona.readState().current,
           channels: Object.keys(CHANNELS).map((n) => CHANNELS[n].status()),
+          roadmap: ROADMAP,
+          excluded: EXCLUDED,
         });
       }
       case "help":
