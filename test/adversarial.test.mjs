@@ -50,28 +50,31 @@ test("备份: 多次 apply 不覆盖最初备份", () => {
   assert.equal(readFileSync(f + ".pojia-bak", "utf8"), "ORIGINAL");
 });
 
-test("codex revert: 保留用户中间改动，仅还原 pojia 键", async () => {
+test("codex: 不写 config.toml，用 shim -c 注入；shim 内容正确", async () => {
   const { CHANNELS } = await import("../lib/channels/index.js");
   const c = CHANNELS.codex;
   const cfg = path.join(process.env.CODEX_HOME, "config.toml");
-  writeFileSync(cfg, 'model="x"\nmodel_instructions_file="ORIGINAL_AGENT"\n');
+  const before = existsSync(cfg) ? readFileSync(cfg, "utf8") : null;
   assert.equal(c.apply().ok, true);
-  // 用户中途改了别的键
-  writeFileSync(cfg, 'model="USER_CHANGED"\nmodel_instructions_file="' + path.join(tmp, "injections", "codex.md").replace(/\\/g, "\\\\") + '"\n');
-  const r = c.revert();
-  assert.equal(r.ok, true);
-  const after = readFileSync(cfg, "utf8");
-  assert.ok(after.includes('model="USER_CHANGED"'), "用户改动应保留");
-  assert.ok(after.includes("ORIGINAL_AGENT"), "原键值应恢复");
+  const shim = readFileSync(c.status().script, "utf8");
+  assert.ok(shim.includes("codex -c"));
+  assert.ok(shim.includes("model_instructions_file"));
+  const after = existsSync(cfg) ? readFileSync(cfg, "utf8") : null;
+  assert.equal(after, before, "config.toml 不应被改动（写键无效，已实测）");
+  assert.equal(c.revert().ok, true);
 });
 
-test("codex revert: 无备份时不改动配置", async () => {
+test("codex: legacy config 备份存在时 revert 恢复原键值", async () => {
   const { CHANNELS } = await import("../lib/channels/index.js");
   const cfg = path.join(process.env.CODEX_HOME, "config.toml");
-  writeFileSync(cfg, 'model="x"\n');
+  const original = 'model="x"\nmodel_instructions_file="ORIGINAL_AGENT"\n';
+  writeFileSync(cfg, original);
+  // 模拟旧版误写留下的备份
+  writeFileSync(cfg + ".pojia-bak", original);
   const r = CHANNELS.codex.revert();
-  assert.equal(r.ok, false);
-  assert.equal(readFileSync(cfg, "utf8"), 'model="x"\n');
+  assert.equal(r.ok, true);
+  assert.equal(r.legacyRestored, true);
+  assert.equal(readFileSync(cfg, "utf8"), original);
 });
 
 test("claude revert: 无 managed block 时不删除用户内容", async () => {

@@ -10,6 +10,7 @@ if errorlevel 1 (
   exit /b 2
 )
 echo  Inject current persona into codex + claude.
+echo  codex: use pojia-codex to launch (add ~/.pojia/bin to PATH).
 echo  Restore with the revert bat.
 echo.
 powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "pojia apply codex; pojia apply claude; pojia status"

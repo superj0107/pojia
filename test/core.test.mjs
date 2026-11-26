@@ -32,19 +32,23 @@ test("persona: 导入 -> 切换 -> 正文生效 -> 删除回退", async () => {
   assert.equal(p.readState().current, "pojia-armor");
 });
 
-test("codex: apply 写注入文件与 config，revert 恢复原配置", async () => {
+test("codex: apply 生成 pojia-codex 启动器（-c 注入），revert 清除", async () => {
   const p = await import("../lib/persona.js");
   const codex = await import("../lib/channels/codex.js");
   p.usePersona("pojia-armor");
   const r = codex.apply();
   assert.equal(r.ok, true);
-  const cfg = readFileSync(path.join(process.env.CODEX_HOME, "config.toml"), "utf8");
-  assert.ok(cfg.includes("model_instructions_file"));
-  assert.ok(cfg.includes("model = \"test\""));
+  const shim = readFileSync(r.script, "utf8");
+  assert.ok(shim.includes("-c"));
+  assert.ok(shim.includes("model_instructions_file"));
+  assert.ok(readFileSync(r.injectionPath, "utf8").includes("年前"));
   assert.equal(codex.status().installed, true);
+  // 不改 config.toml：确认裸配置未被写入 pojia 键
+  const cfg = readFileSync(path.join(process.env.CODEX_HOME, "config.toml"), "utf8");
+  assert.ok(!cfg.includes(".pojia/injections"));
   const rv = codex.revert();
   assert.equal(rv.ok, true);
-  assert.equal(readFileSync(path.join(process.env.CODEX_HOME, "config.toml"), "utf8"), 'model = "test"\nsandbox_mode = "danger-full-access"\n');
+  assert.equal(codex.status().installed, false);
 });
 
 test("claude: apply 写 managed block，revert 清除", async () => {
