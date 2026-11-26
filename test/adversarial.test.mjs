@@ -50,31 +50,36 @@ test("备份: 多次 apply 不覆盖最初备份", () => {
   assert.equal(readFileSync(f + ".pojia-bak", "utf8"), "ORIGINAL");
 });
 
-test("codex: 不写 config.toml，用 shim -c 注入；shim 内容正确", async () => {
+test("codex: 写 config.toml developer_instructions，保留其它键，revert 还原", async () => {
   const { CHANNELS } = await import("../lib/channels/index.js");
   const c = CHANNELS.codex;
   const cfg = path.join(process.env.CODEX_HOME, "config.toml");
-  const before = existsSync(cfg) ? readFileSync(cfg, "utf8") : null;
+  const original = 'model = "m"\nsandbox_mode = "danger-full-access"\n';
+  writeFileSync(cfg, original);
   assert.equal(c.apply().ok, true);
-  const shim = readFileSync(c.status().script, "utf8");
-  assert.ok(shim.includes("codex -c"));
-  assert.ok(shim.includes("model_instructions_file"));
-  const after = existsSync(cfg) ? readFileSync(cfg, "utf8") : null;
-  assert.equal(after, before, "config.toml 不应被改动（写键无效，已实测）");
+  const after = readFileSync(cfg, "utf8");
+  assert.ok(after.includes("pojia developer_instructions"));
+  assert.ok(after.includes("model = \"m\""), "其它键保留");
+  assert.equal(c.status().installed, true);
   assert.equal(c.revert().ok, true);
+  assert.equal(c.status().installed, false);
 });
 
-test("codex: legacy config 备份存在时 revert 恢复原键值", async () => {
+test("codex: 人设含 ''' 时不破坏 TOML（转义兜底）", async () => {
   const { CHANNELS } = await import("../lib/channels/index.js");
+  const p = await import("../lib/persona.js");
   const cfg = path.join(process.env.CODEX_HOME, "config.toml");
-  const original = 'model="x"\nmodel_instructions_file="ORIGINAL_AGENT"\n';
-  writeFileSync(cfg, original);
-  // 模拟旧版误写留下的备份
-  writeFileSync(cfg + ".pojia-bak", original);
-  const r = CHANNELS.codex.revert();
-  assert.equal(r.ok, true);
-  assert.equal(r.legacyRestored, true);
-  assert.equal(readFileSync(cfg, "utf8"), original);
+  writeFileSync(cfg, 'model = "m"\n');
+  assert.equal(p.importPersona("tricky", "内容含 ''' 三引号 should not break TOML", { name: "t" }).ok, true);
+  assert.equal(p.usePersona("tricky").ok, true);
+  assert.equal(CHANNELS.codex.apply().ok, true);
+  const after = readFileSync(cfg, "utf8");
+  // 内容里原本的 ''' 已被替换，块结构完整（只有一个起始 ''' 与一个结束 '''）
+  const tripleCount = (after.match(/'''/g) || []).length;
+  assert.equal(tripleCount, 2, "应只剩 developer_instructions 的起止三引号");
+  assert.equal(CHANNELS.codex.revert().ok, true);
+  p.deletePersona("tricky");
+  p.usePersona("pojia-armor");
 });
 
 test("claude revert: 无 managed block 时不删除用户内容", async () => {

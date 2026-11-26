@@ -32,23 +32,25 @@ test("persona: 导入 -> 切换 -> 正文生效 -> 删除回退", async () => {
   assert.equal(p.readState().current, "pojia-armor");
 });
 
-test("codex: apply 生成 pojia-codex 启动器（-c 注入），revert 清除", async () => {
+test("codex: apply 写 config.toml 的 developer_instructions，revert 还原", async () => {
   const p = await import("../lib/persona.js");
   const codex = await import("../lib/channels/codex.js");
+  const cfgPath = path.join(process.env.CODEX_HOME, "config.toml");
+  const original = 'model = "test"\nsandbox_mode = "danger-full-access"\n';
+  writeFileSync(cfgPath, original);
   p.usePersona("pojia-armor");
   const r = codex.apply();
   assert.equal(r.ok, true);
-  const shim = readFileSync(r.script, "utf8");
-  assert.ok(shim.includes("-c"));
-  assert.ok(shim.includes("model_instructions_file"));
-  assert.ok(readFileSync(r.injectionPath, "utf8").includes("年前"));
+  const cfg = readFileSync(cfgPath, "utf8");
+  assert.ok(cfg.includes("developer_instructions"));
+  assert.ok(cfg.includes("pojia developer_instructions"));
+  assert.ok(cfg.includes("model = \"test\""), "其它键应保留");
   assert.equal(codex.status().installed, true);
-  // 不改 config.toml：确认裸配置未被写入 pojia 键
-  const cfg = readFileSync(path.join(process.env.CODEX_HOME, "config.toml"), "utf8");
-  assert.ok(!cfg.includes(".pojia/injections"));
+  assert.ok(readFileSync(r.injectionPath, "utf8").includes("年前"));
   const rv = codex.revert();
   assert.equal(rv.ok, true);
   assert.equal(codex.status().installed, false);
+  assert.equal(readFileSync(cfgPath, "utf8").trim(), original.trim());
 });
 
 test("claude: apply 写 managed block，revert 清除", async () => {

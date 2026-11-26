@@ -51,7 +51,7 @@ pojia validate clear
 
 | 通道 | 落点 | 生效层 | 状态 |
 |---|---|---|---|
-| codex | `pojia-codex` 启动器用 `-c model_instructions_file` 注入 | system | 本机实测（0.170+ 忽略 config.toml 同名键，必须用 -c） |
+| codex | `~/.codex/config.toml` 的 `developer_instructions` | system | 本机实测；CLI 与桌面 App 同一份 config，重启 App 生效 |
 | claude | `CLAUDE.md` managed block + sys 文件 | user/sys | 本机实测 |
 | grok | `~/.grok/AGENTS.md` | 用户层，启动读一次 | 未实测（本机无 grok） |
 | hermes | `HERMES_HOME/SOUL.md` | 会话首轮 | 未实测（续会话不生效） |
@@ -67,7 +67,7 @@ DSH 走姊妹项目 [dsh-pojia](https://github.com/superj0107/dsh-pojia)。
 
 通道目录隔离：可用 `CODEX_HOME`、`CLAUDE_CONFIG_DIR`、`GROK_HOME`、`HERMES_HOME`、`ZCODE_HOME`、`XDG_CONFIG_HOME` 指向测试目录，不碰真实配置。数据目录用 `POJIA_HOME`（默认 `~/.pojia`）。
 
-**注意**：`apply all` 会写所有通道（含未实测的），建议先 `pojia status` 看清落点，对真实环境用具体通道名。**codex 必须用 `pojia-codex` 启动才注入**（把 `~/.pojia/bin` 加入 PATH），裸敲 `codex` 不生效——这不是缺陷，是 codex 0.170+ 只认启动参数、不认 config.toml 同名键。旧版误写进 config.toml 的键会在 `revert` 时从 `.pojia-bak` 恢复。
+**注意**：`apply all` 会写所有通道（含未实测的），建议先 `pojia status` 看清落点，对真实环境用具体通道名。**codex 的注入写在 `~/.codex/config.toml` 的 `developer_instructions` 键**（不是 `model_instructions_file`，后者在 codex 0.170+ 被忽略）。CLI 与桌面 App 读同一份 config，所以**桌面 App 重启后同样生效**。`revert` 时从 `.pojia-bak` 还原原始 developer_instructions。
 
 ## 人设格式
 
