@@ -11,6 +11,10 @@
 
 ## 安装
 
+**Windows 一键（推荐）**：下载 Release 的 `pojia-installer.zip`，解压后双击 `点我一键安装.bat`（装 CLI），再双击 `点我一键注入.bat`（投放到 codex+claude）。要还原双击 `点我一键回滚.bat`，自检双击 `点我检查是否生效.bat`，彻底卸载双击 `点我一键卸载.bat`。每个 bat 只是薄启动器，核心是 install.ps1 + `pojia` 命令，动作干净可逆。
+
+**命令行**：
+
 ```sh
 npm install -g pojia
 # 或源码
