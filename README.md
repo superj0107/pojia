@@ -1,5 +1,6 @@
 # pojia — 一份人设，多宿主投放
 
+[![CI](https://github.com/superj0107/pojia/actions/workflows/ci.yml/badge.svg)](https://github.com/superj0107/pojia/actions/workflows/ci.yml)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](./LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=node.js&logoColor=fff)](https://nodejs.org/)
 
@@ -11,7 +12,9 @@
 
 ## 安装
 
-**Windows 一键（推荐）**：下载 Release 的 `pojia-installer.zip`，解压后双击 `点我一键安装.bat`（装 CLI），再双击 `点我一键注入.bat`（投放到 codex+claude）。要还原双击 `点我一键回滚.bat`，自检双击 `点我检查是否生效.bat`，彻底卸载双击 `点我一键卸载.bat`。每个 bat 只是薄启动器，核心是 install.ps1 + `pojia` 命令，动作干净可逆。
+**Windows 一键（推荐）**：下载 Release 的 `pojia-*-installer.zip`，解压后双击 `点我一键安装.bat`（装 CLI），再双击 `点我一键注入.bat`（投放到 codex+claude）。要还原双击 `点我一键回滚.bat`，自检双击 `点我检查是否生效.bat`，彻底卸载双击 `点我一键卸载.bat`。每个 bat 只是薄启动器，核心是 install.ps1 + `pojia` 命令，动作干净可逆。
+
+**macOS / Linux / WSL 一键**：解压 installer.zip 后双击 `点我一键安装-macOS.command`（Mac）或运行 `bash install.sh`（Linux/WSL）。卸载用 `点我一键卸载-macOS.command` / `bash uninstall.sh`，自检用 `点我检查是否生效-macOS.command` / `pojia doctor`。缺 Node.js 时可用 `bash install.sh --yes` 尝试自动装，或 `--no-deps` 只注册不装。
 
 **命令行**：
 

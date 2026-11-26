@@ -1,0 +1,88 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Syntax check
+        run: |
+          for f in lib/*.js lib/channels/*.js bin/*.mjs test/*.mjs; do
+            [ -f "$f" ] && node --check "$f"
+          done
+          bash -n install.sh
+          bash -n uninstall.sh
+          bash -n test/install-sh-smoke.sh
+          for f in *.command; do bash -n "$f"; done
+
+      - name: Unit tests
+        run: npm test
+
+      - name: install.sh smoke test
+        run: bash test/install-sh-smoke.sh
+
+      - name: Verify release notes
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          first="$(head -n 1 release-notes.md | tr -d '\r')"
+          if [ "$first" != "# ${version}" ]; then
+            echo "release-notes.md 第一行必须是 # ${version}，现在是: ${first}"
+            exit 1
+          fi
+
+      - name: Build installable tgz and one-click zip
+        run: |
+          npm pack --pack-destination .
+          version="$(node -p "require('./package.json').version")"
+          staged="pojia-${version}-installer"
+          mkdir -p "$staged"
+          tar -xzf "pojia-${version}.tgz"
+          cp -a package/. "$staged/"
+          rm -rf package
+          cp install.sh uninstall.sh "$staged/"
+          cp 点我一键*.bat "$staged/"
+          cp *.command "$staged/"
+          chmod +x "$staged"/*.sh "$staged"/*.command
+          zip -qr "pojia-${version}-installer.zip" "$staged"
+          ls -lh pojia-*.tgz pojia-*-installer.zip
+
+      - name: Publish GitHub Release with installable package
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./package.json').version")"
+          tag="v${version}"
+          tgz="pojia-${version}.tgz"
+          zip="pojia-${version}-installer.zip"
+          test -s "$tgz" && test -s "$zip"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" "$tgz" "$zip" --clobber
+            echo "updated https://github.com/${GITHUB_REPOSITORY}/releases/tag/${tag}"
+          else
+            args=(release create "$tag" --title "$tag" --notes-file release-notes.md "$tgz" "$zip")
+            case "$version" in
+              *beta*|*alpha*|*rc*) args+=(--prerelease) ;;
+            esac
+            gh "${args[@]}"
+            echo "published https://github.com/${GITHUB_REPOSITORY}/releases/tag/${tag}"
+          fi

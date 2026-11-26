@@ -1,0 +1,9 @@
+.git/
+.github/
+node_modules/
+test/install-*.sh
+*.tgz
+*.zip
+*.log
+.DS_Store
+Thumbs.db

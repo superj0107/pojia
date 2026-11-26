@@ -22,7 +22,13 @@
     "点我一键注入.bat",
     "点我一键回滚.bat",
     "点我一键卸载.bat",
-    "点我检查是否生效.bat"
+    "点我检查是否生效.bat",
+    "install.sh",
+    "uninstall.sh",
+    "release-notes.md",
+    "点我一键安装-macOS.command",
+    "点我一键卸载-macOS.command",
+    "点我检查是否生效-macOS.command"
   ],
   "scripts": {
     "test": "node --test test/*.test.mjs"
